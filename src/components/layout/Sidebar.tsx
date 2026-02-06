@@ -11,7 +11,8 @@ import {
   Leaf
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 interface NavItem {
   icon: React.ElementType;
@@ -35,6 +36,22 @@ const secondaryNavItems: NavItem[] = [
 
 export function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth");
+  };
+
+  // Get user initials from email or name
+  const getUserInitials = () => {
+    if (user?.user_metadata?.full_name) {
+      const names = user.user_metadata.full_name.split(" ");
+      return names.map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+    }
+    return user?.email?.slice(0, 2).toUpperCase() || "U";
+  };
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
@@ -88,13 +105,19 @@ export function Sidebar() {
       <div className="p-4 border-t border-sidebar-border">
         <div className="flex items-center gap-3 p-3 rounded-lg bg-accent/50">
           <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-            <span className="text-sm font-semibold text-primary">JD</span>
+            <span className="text-sm font-semibold text-primary">{getUserInitials()}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">John Doe</p>
-            <p className="text-xs text-muted-foreground">Administrator</p>
+            <p className="text-sm font-medium text-foreground truncate">
+              {user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User"}
+            </p>
+            <p className="text-xs text-muted-foreground">Clinic Staff</p>
           </div>
-          <button className="p-2 rounded-lg hover:bg-accent transition-colors">
+          <button 
+            onClick={handleSignOut}
+            className="p-2 rounded-lg hover:bg-accent transition-colors"
+            title="Sign out"
+          >
             <LogOut className="w-4 h-4 text-muted-foreground" />
           </button>
         </div>
