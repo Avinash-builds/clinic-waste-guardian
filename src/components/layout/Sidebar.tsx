@@ -11,16 +11,16 @@ import {
   Leaf
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Link, useLocation } from "react-router-dom";
 
 interface NavItem {
   icon: React.ElementType;
   label: string;
   href: string;
-  active?: boolean;
 }
 
 const mainNavItems: NavItem[] = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/", active: true },
+  { icon: LayoutDashboard, label: "Dashboard", href: "/" },
   { icon: ClipboardList, label: "Waste Entry", href: "/waste-entry" },
   { icon: Recycle, label: "Recycling", href: "/recycling" },
   { icon: BarChart3, label: "Analytics", href: "/analytics" },
@@ -34,6 +34,8 @@ const secondaryNavItems: NavItem[] = [
 ];
 
 export function Sidebar() {
+  const location = useLocation();
+
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
       {/* Logo */}
@@ -55,14 +57,14 @@ export function Sidebar() {
           Main Menu
         </p>
         {mainNavItems.map((item) => (
-          <a
+          <Link
             key={item.label}
-            href={item.href}
-            className={cn("nav-link", item.active && "active")}
+            to={item.href}
+            className={cn("nav-link", location.pathname === item.href && "active")}
           >
             <item.icon className="w-5 h-5" />
             <span className="font-medium">{item.label}</span>
-          </a>
+          </Link>
         ))}
 
         <div className="pt-6">
@@ -70,14 +72,14 @@ export function Sidebar() {
             System
           </p>
           {secondaryNavItems.map((item) => (
-            <a
+            <Link
               key={item.label}
-              href={item.href}
-              className="nav-link"
+              to={item.href}
+              className={cn("nav-link", location.pathname === item.href && "active")}
             >
               <item.icon className="w-5 h-5" />
               <span className="font-medium">{item.label}</span>
-            </a>
+            </Link>
           ))}
         </div>
       </nav>
