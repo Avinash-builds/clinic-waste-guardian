@@ -3,7 +3,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
 import WasteEntry from "./pages/WasteEntry";
 import Recycling from "./pages/Recycling";
 import Analytics from "./pages/Analytics";
@@ -22,14 +24,15 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/waste-entry" element={<WasteEntry />} />
-          <Route path="/recycling" element={<Recycling />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/clinics" element={<Clinics />} />
-          <Route path="/users" element={<Users />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+          <Route path="/waste-entry" element={<ProtectedRoute><WasteEntry /></ProtectedRoute>} />
+          <Route path="/recycling" element={<ProtectedRoute><Recycling /></ProtectedRoute>} />
+          <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+          <Route path="/clinics" element={<ProtectedRoute><Clinics /></ProtectedRoute>} />
+          <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+          <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
