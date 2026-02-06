@@ -1,0 +1,5 @@
+project_id = "ogcqukipbzkhilzqejun"
+
+[functions.analytics-insights]
+enabled = true
+verify_jwt = false
