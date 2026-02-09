@@ -1,16 +1,50 @@
-import { Recycle, TrendingUp, Package, CheckCircle } from "lucide-react";
-
-const stats = [
-  { label: "Total Recycled", value: "2,456 kg", change: "+12%", icon: Recycle, color: "text-primary" },
-  { label: "Recycling Rate", value: "78.5%", change: "+5.2%", icon: TrendingUp, color: "text-green-500" },
-  { label: "Active Batches", value: "24", change: "+3", icon: Package, color: "text-blue-500" },
-  { label: "Completed Today", value: "8", change: "+2", icon: CheckCircle, color: "text-purple-500" },
-];
+import { Recycle, Scale, Clock, CheckCircle } from "lucide-react";
+import { useRecyclingStats } from "@/hooks/useRecyclingLogs";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function RecyclingStats() {
+  const { data: stats, isLoading } = useRecyclingStats();
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Skeleton key={i} className="h-24 w-full rounded-xl" />
+        ))}
+      </div>
+    );
+  }
+
+  const statCards = [
+    { 
+      label: "Total Input", 
+      value: `${(stats?.totalInput || 0).toFixed(1)} kg`, 
+      icon: Scale, 
+      color: "text-primary" 
+    },
+    { 
+      label: "Total Output", 
+      value: `${(stats?.totalOutput || 0).toFixed(1)} kg`, 
+      icon: Recycle, 
+      color: "text-green-500" 
+    },
+    { 
+      label: "Processing", 
+      value: String(stats?.processingCount || 0), 
+      icon: Clock, 
+      color: "text-yellow-500" 
+    },
+    { 
+      label: "Completed", 
+      value: String(stats?.completedCount || 0), 
+      icon: CheckCircle, 
+      color: "text-purple-500" 
+    },
+  ];
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {stats.map((stat) => (
+      {statCards.map((stat) => (
         <div
           key={stat.label}
           className="bg-card rounded-xl border border-border p-6 animate-slide-up"
@@ -19,7 +53,6 @@ export function RecyclingStats() {
             <div>
               <p className="text-sm text-muted-foreground">{stat.label}</p>
               <p className="text-2xl font-bold text-foreground mt-1">{stat.value}</p>
-              <p className="text-sm text-green-500 mt-1">{stat.change}</p>
             </div>
             <div className={`p-3 rounded-xl bg-muted ${stat.color}`}>
               <stat.icon className="w-6 h-6" />

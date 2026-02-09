@@ -1,16 +1,77 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
-const data = [
-  { name: 'Mon', yellow: 24, red: 18, blue: 30, white: 12, sharps: 8 },
-  { name: 'Tue', yellow: 30, red: 22, blue: 25, white: 15, sharps: 10 },
-  { name: 'Wed', yellow: 28, red: 20, blue: 32, white: 18, sharps: 12 },
-  { name: 'Thu', yellow: 35, red: 25, blue: 28, white: 20, sharps: 14 },
-  { name: 'Fri', yellow: 32, red: 28, blue: 35, white: 16, sharps: 11 },
-  { name: 'Sat', yellow: 20, red: 15, blue: 22, white: 10, sharps: 6 },
-  { name: 'Sun', yellow: 18, red: 12, blue: 18, white: 8, sharps: 5 },
-];
+import { useWasteRecords } from '@/hooks/useWasteRecords';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useMemo } from 'react';
+import { format, subDays, startOfDay, isSameDay } from 'date-fns';
 
 export function WasteChart() {
+  const { data: records, isLoading } = useWasteRecords();
+
+  const chartData = useMemo(() => {
+    // Generate last 7 days
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = subDays(new Date(), i);
+      days.push({
+        name: format(date, 'EEE'),
+        date: startOfDay(date),
+        yellow: 0,
+        red: 0,
+        blue: 0,
+        white: 0,
+        sharps: 0,
+      });
+    }
+
+    if (!records || records.length === 0) {
+      return days;
+    }
+
+    // Aggregate records by day
+    records.forEach((record) => {
+      const recordDate = startOfDay(new Date(record.recorded_at));
+      const dayData = days.find(d => isSameDay(d.date, recordDate));
+      
+      if (dayData) {
+        const colorCode = record.waste_categories?.color_code?.toLowerCase() || "";
+        const weight = Number(record.weight_kg);
+        
+        if (colorCode.includes("yellow") || colorCode === "#f59e0b") {
+          dayData.yellow += weight;
+        } else if (colorCode.includes("red") || colorCode === "#ef4444") {
+          dayData.red += weight;
+        } else if (colorCode.includes("blue") || colorCode === "#3b82f6") {
+          dayData.blue += weight;
+        } else if (colorCode.includes("white") || colorCode === "#f3f4f6") {
+          dayData.white += weight;
+        } else {
+          dayData.sharps += weight;
+        }
+      }
+    });
+
+    return days.map(d => ({
+      name: d.name,
+      yellow: Math.round(d.yellow * 10) / 10,
+      red: Math.round(d.red * 10) / 10,
+      blue: Math.round(d.blue * 10) / 10,
+      white: Math.round(d.white * 10) / 10,
+      sharps: Math.round(d.sharps * 10) / 10,
+    }));
+  }, [records]);
+
+  if (isLoading) {
+    return (
+      <div className="bg-card rounded-xl border border-border p-6 animate-slide-up">
+        <div className="mb-6">
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-4 w-64 mt-2" />
+        </div>
+        <Skeleton className="h-[300px] w-full" />
+      </div>
+    );
+  }
+
   return (
     <div className="bg-card rounded-xl border border-border p-6 animate-slide-up">
       <div className="mb-6">
@@ -20,7 +81,7 @@ export function WasteChart() {
       
       <div className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="colorYellow" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#FACC15" stopOpacity={0.3}/>
@@ -63,6 +124,7 @@ export function WasteChart() {
               strokeWidth={2}
               fillOpacity={1} 
               fill="url(#colorYellow)" 
+              name="Yellow"
             />
             <Area 
               type="monotone" 
@@ -71,6 +133,7 @@ export function WasteChart() {
               strokeWidth={2}
               fillOpacity={1} 
               fill="url(#colorRed)" 
+              name="Red"
             />
             <Area 
               type="monotone" 
@@ -79,6 +142,7 @@ export function WasteChart() {
               strokeWidth={2}
               fillOpacity={1} 
               fill="url(#colorBlue)" 
+              name="Blue"
             />
           </AreaChart>
         </ResponsiveContainer>

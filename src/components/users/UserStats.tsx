@@ -1,16 +1,30 @@
-import { Users, UserCheck, UserX, Shield } from "lucide-react";
-
-const stats = [
-  { label: "Total Users", value: "156", icon: Users, color: "text-primary" },
-  { label: "Active Users", value: "142", icon: UserCheck, color: "text-green-500" },
-  { label: "Inactive", value: "14", icon: UserX, color: "text-muted-foreground" },
-  { label: "Admins", value: "8", icon: Shield, color: "text-purple-500" },
-];
+import { Users, UserCheck, UserCog, Shield } from "lucide-react";
+import { useProfileStats } from "@/hooks/useProfiles";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function UserStats() {
+  const { data: stats, isLoading } = useProfileStats();
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Skeleton key={i} className="h-24 w-full rounded-xl" />
+        ))}
+      </div>
+    );
+  }
+
+  const statCards = [
+    { label: "Total Users", value: String(stats?.total || 0), icon: Users, color: "text-primary" },
+    { label: "Administrators", value: String(stats?.admins || 0), icon: Shield, color: "text-purple-500" },
+    { label: "Moderators", value: String(stats?.moderators || 0), icon: UserCog, color: "text-blue-500" },
+    { label: "Clinic Staff", value: String(stats?.staff || 0), icon: UserCheck, color: "text-green-500" },
+  ];
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {stats.map((stat) => (
+      {statCards.map((stat) => (
         <div
           key={stat.label}
           className="bg-card rounded-xl border border-border p-6 animate-slide-up"
