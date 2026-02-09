@@ -6,28 +6,71 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { useClinics } from "@/hooks/useClinics";
+import { useWasteCategories } from "@/hooks/useWasteCategories";
+import { useCreateWasteRecord } from "@/hooks/useWasteRecords";
+import { useAuth } from "@/hooks/useAuth";
+import { Loader2 } from "lucide-react";
 
-const wasteCategories = [
-  { value: "yellow", label: "Yellow - Infectious Waste", color: "bg-waste-yellow" },
-  { value: "red", label: "Red - Contaminated Recyclables", color: "bg-waste-red" },
-  { value: "blue", label: "Blue - Pharmaceutical Waste", color: "bg-waste-blue" },
-  { value: "white", label: "White - Sharp Objects", color: "bg-waste-white border" },
-  { value: "sharps", label: "Sharps/Others", color: "bg-waste-sharps" },
-];
+const colorClassMap: Record<string, string> = {
+  yellow: "bg-waste-yellow",
+  red: "bg-waste-red",
+  blue: "bg-waste-blue",
+  white: "bg-waste-white border",
+  black: "bg-waste-sharps",
+  "#F59E0B": "bg-waste-yellow",
+  "#EF4444": "bg-waste-red",
+  "#3B82F6": "bg-waste-blue",
+  "#F3F4F6": "bg-waste-white border",
+  "#6B7280": "bg-waste-sharps",
+};
 
 export function WasteEntryForm() {
-  const [category, setCategory] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [weight, setWeight] = useState("");
-  const [clinic, setClinic] = useState("");
+  const [clinicId, setClinicId] = useState("");
   const [notes, setNotes] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { data: clinics, isLoading: clinicsLoading } = useClinics();
+  const { data: categories, isLoading: categoriesLoading } = useWasteCategories();
+  const createWasteRecord = useCreateWasteRecord();
+  const { user } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Waste entry recorded successfully!");
-    setCategory("");
-    setWeight("");
-    setClinic("");
-    setNotes("");
+    
+    if (!categoryId || !weight || !clinicId) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    if (!user?.id) {
+      toast.error("You must be logged in to submit waste entries");
+      return;
+    }
+
+    try {
+      await createWasteRecord.mutateAsync({
+        category_id: categoryId,
+        clinic_id: clinicId,
+        weight_kg: parseFloat(weight),
+        notes: notes || null,
+        recorded_by: user.id,
+        status: "pending",
+      });
+      
+      toast.success("Waste entry recorded successfully!");
+      setCategoryId("");
+      setWeight("");
+      setClinicId("");
+      setNotes("");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to record waste entry");
+    }
+  };
+
+  const getColorClass = (colorCode: string) => {
+    return colorClassMap[colorCode.toLowerCase()] || colorClassMap[colorCode] || "bg-muted";
   };
 
   return (
@@ -38,31 +81,33 @@ export function WasteEntryForm() {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="clinic">Clinic</Label>
-            <Select value={clinic} onValueChange={setClinic}>
+            <Label htmlFor="clinic">Clinic *</Label>
+            <Select value={clinicId} onValueChange={setClinicId} disabled={clinicsLoading}>
               <SelectTrigger>
-                <SelectValue placeholder="Select clinic" />
+                <SelectValue placeholder={clinicsLoading ? "Loading clinics..." : "Select clinic"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="city-clinic">City Health Clinic</SelectItem>
-                <SelectItem value="metro-hospital">Metro General Hospital</SelectItem>
-                <SelectItem value="sunrise-diagnostics">Sunrise Diagnostics</SelectItem>
+                {clinics?.map((clinic) => (
+                  <SelectItem key={clinic.id} value={clinic.id}>
+                    {clinic.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="category">Waste Category</Label>
-            <Select value={category} onValueChange={setCategory}>
+            <Label htmlFor="category">Waste Category *</Label>
+            <Select value={categoryId} onValueChange={setCategoryId} disabled={categoriesLoading}>
               <SelectTrigger>
-                <SelectValue placeholder="Select category" />
+                <SelectValue placeholder={categoriesLoading ? "Loading categories..." : "Select category"} />
               </SelectTrigger>
               <SelectContent>
-                {wasteCategories.map((cat) => (
-                  <SelectItem key={cat.value} value={cat.value}>
+                {categories?.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
                     <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${cat.color}`} />
-                      {cat.label}
+                      <div className={`w-3 h-3 rounded-full ${getColorClass(cat.color_code)}`} />
+                      {cat.name}
                     </div>
                   </SelectItem>
                 ))}
@@ -71,14 +116,16 @@ export function WasteEntryForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="weight">Weight (kg)</Label>
+            <Label htmlFor="weight">Weight (kg) *</Label>
             <Input
               id="weight"
               type="number"
               step="0.1"
+              min="0.1"
               placeholder="Enter weight"
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
+              required
             />
           </div>
 
@@ -92,8 +139,19 @@ export function WasteEntryForm() {
             />
           </div>
 
-          <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
-            Record Entry
+          <Button 
+            type="submit" 
+            className="w-full bg-primary hover:bg-primary/90"
+            disabled={createWasteRecord.isPending}
+          >
+            {createWasteRecord.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Recording...
+              </>
+            ) : (
+              "Record Entry"
+            )}
           </Button>
         </form>
       </CardContent>

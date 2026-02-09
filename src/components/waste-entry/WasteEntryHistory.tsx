@@ -1,70 +1,93 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useWasteRecords } from "@/hooks/useWasteRecords";
+import { Skeleton } from "@/components/ui/skeleton";
+import { format } from "date-fns";
 
-const recentEntries = [
-  { id: "WE-001", clinic: "City Health Clinic", category: "Yellow", weight: "12.5 kg", date: "2024-01-15", status: "pending" },
-  { id: "WE-002", clinic: "Metro General Hospital", category: "Red", weight: "8.2 kg", date: "2024-01-15", status: "collected" },
-  { id: "WE-003", clinic: "Sunrise Diagnostics", category: "Blue", weight: "3.7 kg", date: "2024-01-14", status: "processed" },
-  { id: "WE-004", clinic: "City Health Clinic", category: "Sharps", weight: "1.2 kg", date: "2024-01-14", status: "pending" },
-  { id: "WE-005", clinic: "Metro General Hospital", category: "White", weight: "5.8 kg", date: "2024-01-13", status: "collected" },
-];
-
-const getCategoryColor = (category: string) => {
-  const colors: Record<string, string> = {
-    Yellow: "bg-waste-yellow text-waste-yellow-foreground",
-    Red: "bg-waste-red text-white",
-    Blue: "bg-waste-blue text-white",
-    White: "bg-waste-white text-foreground border",
-    Sharps: "bg-waste-sharps text-white",
-  };
-  return colors[category] || "bg-muted";
-};
-
-const getStatusColor = (status: string) => {
-  const colors: Record<string, string> = {
-    pending: "bg-yellow-100 text-yellow-800",
-    collected: "bg-blue-100 text-blue-800",
-    processed: "bg-green-100 text-green-800",
-  };
-  return colors[status] || "bg-muted";
+const statusStyles: Record<string, string> = {
+  pending: "bg-yellow-100 text-yellow-800",
+  collected: "bg-blue-100 text-blue-800",
+  processed: "bg-green-100 text-green-800",
 };
 
 export function WasteEntryHistory() {
+  const { data: records, isLoading, error } = useWasteRecords(10);
+
+  if (isLoading) {
+    return (
+      <Card className="animate-slide-up">
+        <CardHeader>
+          <CardTitle className="font-display">Recent Entries</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-20 w-full" />
+          ))}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="animate-slide-up">
+        <CardHeader>
+          <CardTitle className="font-display">Recent Entries</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-destructive text-center">Failed to load entries</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const isEmpty = !records || records.length === 0;
+
   return (
     <Card className="animate-slide-up">
       <CardHeader>
         <CardTitle className="font-display">Recent Entries</CardTitle>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Clinic</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Weight</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {recentEntries.map((entry) => (
-              <TableRow key={entry.id}>
-                <TableCell className="font-medium">{entry.id}</TableCell>
-                <TableCell>{entry.clinic}</TableCell>
-                <TableCell>
-                  <Badge className={getCategoryColor(entry.category)}>{entry.category}</Badge>
-                </TableCell>
-                <TableCell>{entry.weight}</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className={getStatusColor(entry.status)}>
-                    {entry.status}
+        {isEmpty ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">No entries recorded yet.</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Submit your first waste entry using the form.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {records.map((record) => (
+              <div 
+                key={record.id} 
+                className="p-4 bg-muted/50 rounded-lg border border-border hover:bg-muted transition-colors"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <p className="font-medium text-foreground">
+                      {record.clinics?.name || "Unknown Clinic"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {record.waste_categories?.name || "Unknown Category"} • {Number(record.weight_kg).toFixed(1)} kg
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {format(new Date(record.recorded_at), "MMM dd, yyyy 'at' h:mm a")}
+                    </p>
+                  </div>
+                  <Badge className={statusStyles[record.status || "pending"]}>
+                    {record.status || "pending"}
                   </Badge>
-                </TableCell>
-              </TableRow>
+                </div>
+                {record.notes && (
+                  <p className="text-sm text-muted-foreground mt-2 pt-2 border-t border-border">
+                    {record.notes}
+                  </p>
+                )}
+              </div>
             ))}
-          </TableBody>
-        </Table>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
