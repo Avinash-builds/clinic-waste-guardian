@@ -142,6 +142,65 @@ export type Database = {
         }
         Relationships: []
       }
+      pickup_schedules: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          driver_name: string | null
+          id: string
+          notes: string | null
+          requested_by: string | null
+          requested_date: string
+          scheduled_date: string | null
+          status: string
+          total_weight_kg: number
+          updated_at: string
+          vehicle_number: string | null
+          verified_by: string | null
+          waste_details: Json | null
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          driver_name?: string | null
+          id?: string
+          notes?: string | null
+          requested_by?: string | null
+          requested_date?: string
+          scheduled_date?: string | null
+          status?: string
+          total_weight_kg?: number
+          updated_at?: string
+          vehicle_number?: string | null
+          verified_by?: string | null
+          waste_details?: Json | null
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          driver_name?: string | null
+          id?: string
+          notes?: string | null
+          requested_by?: string | null
+          requested_date?: string
+          scheduled_date?: string | null
+          status?: string
+          total_weight_kg?: number
+          updated_at?: string
+          vehicle_number?: string | null
+          verified_by?: string | null
+          waste_details?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pickup_schedules_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

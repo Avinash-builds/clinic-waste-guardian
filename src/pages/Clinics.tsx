@@ -2,8 +2,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { ClinicsTable } from "@/components/clinics/ClinicsTable";
 import { ClinicStats } from "@/components/clinics/ClinicStats";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { AddClinicDialog } from "@/components/clinics/AddClinicDialog";
 
 const Clinics = () => {
   return (
@@ -17,14 +16,9 @@ const Clinics = () => {
               <h1 className="font-display text-2xl font-bold text-foreground">Clinics Management</h1>
               <p className="text-muted-foreground">Register and manage clinic profiles</p>
             </div>
-            <Button className="bg-primary hover:bg-primary/90">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Clinic
-            </Button>
+            <AddClinicDialog />
           </div>
-          
           <ClinicStats />
-          
           <div className="mt-6">
             <ClinicsTable />
           </div>

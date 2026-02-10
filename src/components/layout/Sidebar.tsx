@@ -8,7 +8,8 @@ import {
   Bell, 
   Settings,
   LogOut,
-  Leaf
+  Leaf,
+  Truck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -21,11 +22,12 @@ interface NavItem {
 }
 
 const mainNavItems: NavItem[] = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/" },
+  { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   { icon: ClipboardList, label: "Waste Entry", href: "/waste-entry" },
   { icon: Recycle, label: "Recycling", href: "/recycling" },
   { icon: BarChart3, label: "Analytics", href: "/analytics" },
   { icon: Building2, label: "Clinics", href: "/clinics" },
+  { icon: Truck, label: "Schedule Pickup", href: "/schedule-pickup" },
   { icon: Users, label: "Users", href: "/users" },
 ];
 
