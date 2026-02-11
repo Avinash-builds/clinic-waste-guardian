@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { usePickupSchedules, useUpdatePickupSchedule } from "@/hooks/usePickupSchedules";
 import { useAuth } from "@/hooks/useAuth";
 import { SchedulePickupDialog } from "@/components/dashboard/SchedulePickupDialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Truck, Plus, CheckCircle, Clock, Calendar } from "lucide-react";
+import { Truck, Plus, CheckCircle, Clock, Calendar, MessageSquare } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -28,28 +29,51 @@ const SchedulePickup = () => {
   const updatePickup = useUpdatePickupSchedule();
   const { user } = useAuth();
   const [requestOpen, setRequestOpen] = useState(false);
-  const [verifyId, setVerifyId] = useState<string | null>(null);
+  const [replyPickup, setReplyPickup] = useState<any>(null);
   const [scheduleDate, setScheduleDate] = useState("");
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [driverName, setDriverName] = useState("");
+  const [replyAction, setReplyAction] = useState<"accept" | "schedule">("accept");
 
-  const handleVerifyAndSchedule = () => {
-    if (!verifyId || !scheduleDate) return;
-    updatePickup.mutate(
-      {
-        id: verifyId,
-        status: "scheduled",
-        scheduled_date: new Date(scheduleDate).toISOString(),
-        vehicle_number: vehicleNumber || undefined,
-        driver_name: driverName || undefined,
-        verified_by: user?.id,
-      },
-      {
-        onSuccess: () => {
-          toast.success("Pickup verified and scheduled!");
-          setVerifyId(null);
-          setScheduleDate(""); setVehicleNumber(""); setDriverName("");
+  const handleAdminReply = () => {
+    if (!replyPickup) return;
+
+    if (replyAction === "accept") {
+      updatePickup.mutate(
+        { id: replyPickup.id, status: "verified", verified_by: user?.id },
+        {
+          onSuccess: () => { toast.success("Pickup request accepted! Clinic will be notified."); setReplyPickup(null); },
+          onError: (e: any) => toast.error(e.message),
+        }
+      );
+    } else {
+      if (!scheduleDate) { toast.error("Please select a date"); return; }
+      updatePickup.mutate(
+        {
+          id: replyPickup.id,
+          status: "scheduled",
+          scheduled_date: new Date(scheduleDate).toISOString(),
+          vehicle_number: vehicleNumber || undefined,
+          driver_name: driverName || undefined,
+          verified_by: user?.id,
         },
+        {
+          onSuccess: () => {
+            toast.success("Pickup scheduled! Clinic will see the assigned date.");
+            setReplyPickup(null);
+            setScheduleDate(""); setVehicleNumber(""); setDriverName("");
+          },
+          onError: (e: any) => toast.error(e.message),
+        }
+      );
+    }
+  };
+
+  const handleComplete = (id: string) => {
+    updatePickup.mutate(
+      { id, status: "completed" },
+      {
+        onSuccess: () => toast.success("Pickup marked as completed!"),
         onError: (e: any) => toast.error(e.message),
       }
     );
@@ -58,7 +82,7 @@ const SchedulePickup = () => {
   const stats = {
     total: pickups?.length || 0,
     pending: pickups?.filter(p => p.status === "pending").length || 0,
-    scheduled: pickups?.filter(p => p.status === "scheduled").length || 0,
+    scheduled: pickups?.filter(p => p.status === "scheduled" || p.status === "verified").length || 0,
     completed: pickups?.filter(p => p.status === "completed").length || 0,
   };
 
@@ -71,7 +95,7 @@ const SchedulePickup = () => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="font-display text-2xl font-bold text-foreground">Schedule Pickup</h1>
-              <p className="text-muted-foreground">Request and manage waste collection schedules</p>
+              <p className="text-muted-foreground">Clinics request pickups · Admins verify and schedule dates</p>
             </div>
             <Button onClick={() => setRequestOpen(true)} className="bg-primary hover:bg-primary/90">
               <Plus className="w-4 h-4 mr-2" /> Request Pickup
@@ -92,9 +116,7 @@ const SchedulePickup = () => {
                     <p className="text-sm text-muted-foreground">{s.label}</p>
                     <p className="text-3xl font-bold text-foreground mt-1">{s.value}</p>
                   </div>
-                  <div className={`p-3 rounded-xl bg-muted ${s.color}`}>
-                    <s.icon className="w-6 h-6" />
-                  </div>
+                  <div className={`p-3 rounded-xl bg-muted ${s.color}`}><s.icon className="w-6 h-6" /></div>
                 </CardContent>
               </Card>
             ))}
@@ -117,6 +139,7 @@ const SchedulePickup = () => {
                       <TableHead>Weight</TableHead>
                       <TableHead>Requested</TableHead>
                       <TableHead>Scheduled</TableHead>
+                      <TableHead>Vehicle / Driver</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -135,13 +158,26 @@ const SchedulePickup = () => {
                         <TableCell>{Number(p.total_weight_kg).toFixed(1)} kg</TableCell>
                         <TableCell className="text-sm">{new Date(p.requested_date).toLocaleDateString()}</TableCell>
                         <TableCell className="text-sm">{p.scheduled_date ? new Date(p.scheduled_date).toLocaleDateString() : "—"}</TableCell>
+                        <TableCell className="text-sm">
+                          {p.vehicle_number || p.driver_name
+                            ? `${p.vehicle_number || ""} ${p.driver_name ? `/ ${p.driver_name}` : ""}`
+                            : "—"}
+                        </TableCell>
                         <TableCell><Badge className={statusColors[p.status] || "bg-muted"}>{p.status}</Badge></TableCell>
                         <TableCell>
-                          {p.status === "pending" && (
-                            <Button size="sm" variant="outline" onClick={() => setVerifyId(p.id)}>
-                              Verify & Schedule
-                            </Button>
-                          )}
+                          <div className="flex gap-1">
+                            {(p.status === "pending" || p.status === "verified") && (
+                              <Button size="sm" variant="outline" onClick={() => { setReplyPickup(p); setReplyAction(p.status === "pending" ? "accept" : "schedule"); }}>
+                                <MessageSquare className="w-3.5 h-3.5 mr-1" />
+                                {p.status === "pending" ? "Reply" : "Schedule"}
+                              </Button>
+                            )}
+                            {p.status === "scheduled" && (
+                              <Button size="sm" variant="outline" onClick={() => handleComplete(p.id)}>
+                                <CheckCircle className="w-3.5 h-3.5 mr-1" /> Complete
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -153,28 +189,55 @@ const SchedulePickup = () => {
 
           <SchedulePickupDialog open={requestOpen} onOpenChange={setRequestOpen} />
 
-          {/* Verify & Schedule Dialog */}
-          <Dialog open={!!verifyId} onOpenChange={() => setVerifyId(null)}>
-            <DialogContent className="max-w-sm">
+          {/* Admin Reply Dialog */}
+          <Dialog open={!!replyPickup} onOpenChange={() => setReplyPickup(null)}>
+            <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle className="font-display">Verify & Schedule Pickup</DialogTitle>
+                <DialogTitle className="font-display">
+                  {replyAction === "accept" ? "Accept Pickup Request" : "Schedule Pickup Date"}
+                </DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
-                <div>
-                  <Label>Pickup Date *</Label>
-                  <Input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} />
+                <div className="p-3 bg-muted/50 rounded-lg text-sm">
+                  <p><strong>Clinic:</strong> {replyPickup?.clinics?.name}</p>
+                  <p><strong>Weight:</strong> {Number(replyPickup?.total_weight_kg || 0).toFixed(1)} kg</p>
+                  <p><strong>Categories:</strong> {(replyPickup?.waste_details as any[])?.map((d: any) => d.category).join(", ")}</p>
+                  {replyPickup?.notes && <p><strong>Notes:</strong> {replyPickup.notes}</p>}
                 </div>
-                <div>
-                  <Label>Vehicle Number</Label>
-                  <Input value={vehicleNumber} onChange={e => setVehicleNumber(e.target.value)} />
-                </div>
-                <div>
-                  <Label>Driver Name</Label>
-                  <Input value={driverName} onChange={e => setDriverName(e.target.value)} />
-                </div>
-                <Button onClick={handleVerifyAndSchedule} className="w-full" disabled={updatePickup.isPending || !scheduleDate}>
-                  {updatePickup.isPending ? "Scheduling..." : "Confirm Schedule"}
-                </Button>
+
+                {replyAction === "accept" ? (
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      Accepting this request verifies the waste details. You can schedule the pickup date afterward.
+                    </p>
+                    <div className="flex gap-2 mt-4">
+                      <Button onClick={handleAdminReply} className="flex-1" disabled={updatePickup.isPending}>
+                        {updatePickup.isPending ? "Accepting..." : "Accept Request"}
+                      </Button>
+                      <Button variant="outline" onClick={() => setReplyAction("schedule")} className="flex-1">
+                        Accept & Schedule Now
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <Label>Pickup Date *</Label>
+                      <Input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} />
+                    </div>
+                    <div>
+                      <Label>Vehicle Number</Label>
+                      <Input value={vehicleNumber} onChange={e => setVehicleNumber(e.target.value)} placeholder="e.g. TN-01-AB-1234" />
+                    </div>
+                    <div>
+                      <Label>Driver Name</Label>
+                      <Input value={driverName} onChange={e => setDriverName(e.target.value)} placeholder="Driver assigned" />
+                    </div>
+                    <Button onClick={handleAdminReply} className="w-full" disabled={updatePickup.isPending || !scheduleDate}>
+                      {updatePickup.isPending ? "Scheduling..." : "Confirm & Notify Clinic"}
+                    </Button>
+                  </>
+                )}
               </div>
             </DialogContent>
           </Dialog>
