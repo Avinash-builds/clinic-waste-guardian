@@ -12,6 +12,8 @@ import { usePickupSchedules, useUpdatePickupSchedule } from "@/hooks/usePickupSc
 import { useAuth } from "@/hooks/useAuth";
 import { SchedulePickupDialog } from "@/components/dashboard/SchedulePickupDialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useUserRole } from "@/hooks/useUserRole";
+import { createNotification, notifyAllAdmins } from "@/lib/notifications";
 import { Truck, Plus, CheckCircle, Clock, Calendar, MessageSquare } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -28,6 +30,7 @@ const SchedulePickup = () => {
   const { data: pickups, isLoading } = usePickupSchedules();
   const updatePickup = useUpdatePickupSchedule();
   const { user } = useAuth();
+  const { isAdmin } = useUserRole();
   const [requestOpen, setRequestOpen] = useState(false);
   const [replyPickup, setReplyPickup] = useState<any>(null);
   const [scheduleDate, setScheduleDate] = useState("");
@@ -42,7 +45,19 @@ const SchedulePickup = () => {
       updatePickup.mutate(
         { id: replyPickup.id, status: "verified", verified_by: user?.id },
         {
-          onSuccess: () => { toast.success("Pickup request accepted! Clinic will be notified."); setReplyPickup(null); },
+          onSuccess: () => {
+            toast.success("Pickup request accepted! Clinic will be notified.");
+            if (replyPickup.requested_by) {
+              createNotification({
+                userId: replyPickup.requested_by,
+                title: "Pickup Request Accepted",
+                message: `Your pickup request for ${Number(replyPickup.total_weight_kg).toFixed(1)} kg from ${replyPickup.clinics?.name || "your clinic"} has been accepted. We will schedule a date soon.`,
+                type: "completed",
+                link: "/schedule-pickup",
+              });
+            }
+            setReplyPickup(null);
+          },
           onError: (e: any) => toast.error(e.message),
         }
       );
@@ -60,6 +75,15 @@ const SchedulePickup = () => {
         {
           onSuccess: () => {
             toast.success("Pickup scheduled! Clinic will see the assigned date.");
+            if (replyPickup.requested_by) {
+              createNotification({
+                userId: replyPickup.requested_by,
+                title: "Pickup Scheduled",
+                message: `Your pickup from ${replyPickup.clinics?.name || "your clinic"} has been scheduled for ${new Date(scheduleDate).toLocaleDateString()}.${vehicleNumber ? ` Vehicle: ${vehicleNumber}.` : ""}${driverName ? ` Driver: ${driverName}.` : ""}`,
+                type: "reminder",
+                link: "/schedule-pickup",
+              });
+            }
             setReplyPickup(null);
             setScheduleDate(""); setVehicleNumber(""); setDriverName("");
           },
@@ -166,13 +190,13 @@ const SchedulePickup = () => {
                         <TableCell><Badge className={statusColors[p.status] || "bg-muted"}>{p.status}</Badge></TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            {(p.status === "pending" || p.status === "verified") && (
+                            {isAdmin && (p.status === "pending" || p.status === "verified") && (
                               <Button size="sm" variant="outline" onClick={() => { setReplyPickup(p); setReplyAction(p.status === "pending" ? "accept" : "schedule"); }}>
                                 <MessageSquare className="w-3.5 h-3.5 mr-1" />
                                 {p.status === "pending" ? "Reply" : "Schedule"}
                               </Button>
                             )}
-                            {p.status === "scheduled" && (
+                            {isAdmin && p.status === "scheduled" && (
                               <Button size="sm" variant="outline" onClick={() => handleComplete(p.id)}>
                                 <CheckCircle className="w-3.5 h-3.5 mr-1" /> Complete
                               </Button>

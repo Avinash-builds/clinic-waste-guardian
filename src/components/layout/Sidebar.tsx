@@ -6,7 +6,6 @@ import {
   Building2, 
   Users, 
   Bell, 
-  Settings,
   LogOut,
   Leaf,
   Truck
@@ -14,11 +13,13 @@ import {
 import { cn } from "@/lib/utils";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface NavItem {
   icon: React.ElementType;
   label: string;
   href: string;
+  adminOnly?: boolean;
 }
 
 const mainNavItems: NavItem[] = [
@@ -28,25 +29,21 @@ const mainNavItems: NavItem[] = [
   { icon: BarChart3, label: "Analytics", href: "/analytics" },
   { icon: Building2, label: "Clinics", href: "/clinics" },
   { icon: Truck, label: "Schedule Pickup", href: "/schedule-pickup" },
-  { icon: Users, label: "Users", href: "/users" },
-];
-
-const secondaryNavItems: NavItem[] = [
+  { icon: Users, label: "Users", href: "/users", adminOnly: true },
   { icon: Bell, label: "Notifications", href: "/notifications" },
-  { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
 export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { isAdmin } = useUserRole();
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/auth");
   };
 
-  // Get user initials from email or name
   const getUserInitials = () => {
     if (user?.user_metadata?.full_name) {
       const names = user.user_metadata.full_name.split(" ");
@@ -54,6 +51,8 @@ export function Sidebar() {
     }
     return user?.email?.slice(0, 2).toUpperCase() || "U";
   };
+
+  const filteredNavItems = mainNavItems.filter(item => !item.adminOnly || isAdmin);
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
@@ -75,7 +74,7 @@ export function Sidebar() {
         <p className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Main Menu
         </p>
-        {mainNavItems.map((item) => (
+        {filteredNavItems.map((item) => (
           <Link
             key={item.label}
             to={item.href}
@@ -85,25 +84,9 @@ export function Sidebar() {
             <span className="font-medium">{item.label}</span>
           </Link>
         ))}
-
-        <div className="pt-6">
-          <p className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            System
-          </p>
-          {secondaryNavItems.map((item) => (
-            <Link
-              key={item.label}
-              to={item.href}
-              className={cn("nav-link", location.pathname === item.href && "active")}
-            >
-              <item.icon className="w-5 h-5" />
-              <span className="font-medium">{item.label}</span>
-            </Link>
-          ))}
-        </div>
       </nav>
 
-      {/* User Profile */}
+      {/* User Profile & Sign Out */}
       <div className="p-4 border-t border-sidebar-border">
         <div className="flex items-center gap-3 p-3 rounded-lg bg-accent/50">
           <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
@@ -113,16 +96,16 @@ export function Sidebar() {
             <p className="text-sm font-medium text-foreground truncate">
               {user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User"}
             </p>
-            <p className="text-xs text-muted-foreground">Clinic Staff</p>
+            <p className="text-xs text-muted-foreground">{isAdmin ? "Admin" : "Clinic Staff"}</p>
           </div>
-          <button 
-            onClick={handleSignOut}
-            className="p-2 rounded-lg hover:bg-accent transition-colors"
-            title="Sign out"
-          >
-            <LogOut className="w-4 h-4 text-muted-foreground" />
-          </button>
         </div>
+        <button
+          onClick={handleSignOut}
+          className="mt-3 w-full flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          Sign Out
+        </button>
       </div>
     </aside>
   );

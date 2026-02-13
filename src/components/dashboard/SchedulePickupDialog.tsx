@@ -10,6 +10,7 @@ import { useWasteCategories } from "@/hooks/useWasteCategories";
 import { useCreatePickupSchedule } from "@/hooks/usePickupSchedules";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { notifyAllAdmins } from "@/lib/notifications";
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface Props {
@@ -48,7 +49,14 @@ export function SchedulePickupDialog({ open, onOpenChange }: Props) {
       },
       {
         onSuccess: () => {
+          const clinicName = clinics?.find(c => c.id === clinicId)?.name || "A clinic";
           toast.success("Pickup request submitted! Management will review and schedule.");
+          notifyAllAdmins({
+            title: "New Pickup Request",
+            message: `${clinicName} requested a pickup for ${totalWeight || 0} kg of waste.`,
+            type: "alert",
+            link: "/schedule-pickup",
+          });
           onOpenChange(false);
           setClinicId(""); setTotalWeight(""); setNotes(""); setSelectedCategories([]);
         },
