@@ -2,9 +2,12 @@ import { Bell, Search, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
+import { useNotifications } from "@/hooks/useNotifications";
 
 export function Header() {
   const navigate = useNavigate();
+  const { data: notifications } = useNotifications();
+  const unreadCount = notifications?.filter(n => !n.is_read).length || 0;
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -30,7 +33,11 @@ export function Header() {
 
         <Button variant="ghost" size="icon" className="relative" onClick={() => navigate("/notifications")}>
           <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-destructive rounded-full text-[10px] font-bold text-destructive-foreground flex items-center justify-center px-1">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
         </Button>
 
         <Button className="bg-primary hover:bg-primary/90" onClick={() => navigate("/waste-entry")}>

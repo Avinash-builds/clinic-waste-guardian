@@ -10,6 +10,7 @@ import { useClinics } from "@/hooks/useClinics";
 import { useWasteCategories } from "@/hooks/useWasteCategories";
 import { useCreateWasteRecord } from "@/hooks/useWasteRecords";
 import { useAuth } from "@/hooks/useAuth";
+import { notifyAllAdmins } from "@/lib/notifications";
 import { Loader2 } from "lucide-react";
 
 const colorClassMap: Record<string, string> = {
@@ -59,7 +60,18 @@ export function WasteEntryForm() {
         status: "pending",
       });
       
+      const selectedClinic = clinics?.find(c => c.id === clinicId);
+      const selectedCategory = categories?.find(c => c.id === categoryId);
+      
       toast.success("Waste entry recorded successfully!");
+      
+      notifyAllAdmins({
+        title: "New Waste Entry",
+        message: `${selectedClinic?.name || "A clinic"} recorded ${weight} kg of ${selectedCategory?.name || "waste"}.`,
+        type: "info",
+        link: "/waste-entry",
+      });
+
       setCategoryId("");
       setWeight("");
       setClinicId("");
