@@ -1,73 +1,104 @@
-# Welcome to your Lovable project
+# Clinic Biomedical Waste Recycling Management System
 
-## Project info
+## Abstract
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+A web-based system designed to streamline the safe handling, tracking, and recycling of biomedical waste for clinics, small hospitals, diagnostic centers, and waste recycling agencies.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- **Waste Entry & Tracking** – Categorize and record daily waste disposal data
+- **Clinic Management** – Register clinics, manage profiles, and track compliance
+- **Pickup Scheduling** – Clinics request pickups; admins schedule and confirm collection dates
+- **Recycling Logs** – Track recyclable waste batches, processing, and reuse
+- **Analytics & AI Insights** – Monthly summaries, category-wise statistics, and AI-powered recommendations
+- **Role-Based Access** – Admin (waste management companies) and Clinic Staff roles
+- **Notifications** – Real-time alerts for scheduled pickups, waste entries, and compliance
+- **PDF Reports** – Generate and download disposal and scheduling reports
 
-**Use Lovable**
+## Technology Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- **Frontend:** React, TypeScript, Tailwind CSS, Vite
+- **UI Components:** shadcn/ui, Recharts
+- **Backend:** Supabase (PostgreSQL, Auth, Edge Functions)
+- **PDF Generation:** jsPDF
 
-Changes made via Lovable will be committed automatically to this repo.
+## Getting Started
 
-**Use your preferred IDE**
+### Prerequisites
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Node.js & npm – [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+### Installation
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clone the repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
+# Navigate to the project directory
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Environment Variables
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Create a `.env` file with the following:
 
-**Use GitHub Codespaces**
+```
+VITE_SUPABASE_URL=<your-supabase-url>
+VITE_SUPABASE_PUBLISHABLE_KEY=<your-supabase-anon-key>
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## System Workflow
 
-## What technologies are used for this project?
+1. Clinic staff logs in and records waste entries
+2. Waste is categorized (Yellow, Red, Blue, White, Sharps)
+3. Clinic requests a pickup schedule
+4. Admin reviews, accepts, and schedules the pickup date
+5. Disposal and recycling data are updated
+6. Reports and analytics are generated
+7. Notifications are sent for all key activities
 
-This project is built with:
+## Database Tables
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- `users` / `profiles` – User accounts and profile data
+- `user_roles` – Role-based access (admin, moderator, clinic_staff)
+- `clinics` – Registered clinic information
+- `waste_categories` – Waste segregation categories
+- `waste_records` – Daily waste entry logs
+- `disposal_logs` – Disposal method and vendor tracking
+- `recycling_logs` – Recycling batch processing records
+- `pickup_schedules` – Collection scheduling and status
+- `notifications` – System alerts and messages
 
-## How can I deploy this project?
+## Modules
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+| Module | Description |
+|--------|-------------|
+| Authentication | Login/signup with role-based access |
+| Dashboard | Overview stats, quick actions, recent records |
+| Waste Entry | Record and track daily waste data |
+| Clinics | Register and manage clinic profiles |
+| Pickup Scheduling | Request, accept, and schedule waste collection |
+| Recycling | Track recycling batches and processing |
+| Analytics | Charts, trends, and AI-powered insights |
+| Users | Manage system users and roles |
+| Notifications | Real-time alerts and reminders |
+| Settings | System configuration |
+| Reports | Generate and download PDF reports |
 
-## Can I connect a custom domain to my Lovable project?
+## Future Enhancements
 
-Yes, you can!
+- Mobile app for field collection staff
+- QR-code based waste bag tracking
+- GPS tracking for transport vehicles
+- Email notifications for pickup confirmations
+- Multi-tenant cloud deployment
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## License
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+This project is proprietary software. All rights reserved.
